@@ -77,7 +77,7 @@ function renderTreeNode(container, node, depth = 0) {
     const folderRow = document.createElement('div');
     folderRow.className = 'flex items-center gap-1 px-2 py-[4px] border-b border-[#2c2c2c] text-[12px] cursor-pointer hover:bg-[#2a2a2a] text-[#b9c1cc]';
     folderRow.style.paddingLeft = `${8 + depth * 14}px`;
-    folderRow.innerHTML = `<span class="text-[10px] w-3 inline-block">${hasChildren ? (expanded ? '▼' : '▶') : '•'}</span><span class="truncate">${escapeHtml(child.name)}</span>`;
+    folderRow.innerHTML = `<span class="text-[10px] w-3 inline-block">${hasChildren ? (expanded ? '▼' : '+') : '•'}</span><span class="truncate">${escapeHtml(child.name)}</span>`;
     folderRow.onclick = () => {
       if (!hasChildren) return;
       if (expandedFolders.has(child.key)) expandedFolders.delete(child.key);
