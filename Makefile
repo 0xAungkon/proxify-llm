@@ -15,7 +15,7 @@ dev:
 
 run:
 	uv sync
-	uv run main.py
+	uv run main.py --port 11435
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +

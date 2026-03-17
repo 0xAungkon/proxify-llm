@@ -1,13 +1,178 @@
-# proxify-llm
-A proxy server for llm providers, designed to implement logging , authentications , routings based on conditions. Also It provides a unified interface for interacting with different language models, allowing developers to easily switch between them without changing their application code.
+# Proxify LLM
 
-Phase 1: Basic Proxy Server
-- Implement a basic proxy server.
-- Logging of all incoming requests and outgoing responses in files.
+A sophisticated proxy server for LLM providers designed to provide **security**, **monitoring**, and **intelligence** for your language models. Proxify LLM acts as a protective layer between your applications and LLM backends, providing comprehensive logging, authentication, request inspection, and detailed analytics.
 
-Phase 2: Implementation of Basic Dashboard
-- Develop a web-based dashboard for monitoring real-time logs of requests and responses.
+## What is Proxify LLM?
 
-Phase 4: Implementation Tunneling and Self-Signed SSL
-- Implement tunneling capabilities(claudeflare, ngrok) to securely forward requests to llm providers.
-- Implement self-signed SSL certificates for secure communication.
+Proxify LLM is more than just a proxy server—it's a multi-layered security and monitoring solution:
+
+- **🛡️ Protection Layer**: Secure all incoming requests to your LLM with authentication and rate limiting
+- **🍯 Honeypot**: Monitor and log all interactions, detecting suspicious patterns and unauthorized access attempts
+- **👁️ Inspection Tool**: Reverse engineer and understand how external tools communicate with your models in real-time
+- **📊 Intelligence Dashboard**: Real-time visualization of all requests, responses, and system behavior
+- **🔐 Security Gateway**: Implement role-based access control and fine-grained routing policies
+
+## Core Features
+
+- **Proxy Server**: Full-featured reverse proxy for Ollama Provider with streaming response support
+- **Comprehensive Logging**: All incoming requests and outgoing responses logged to file with detailed metadata
+- **Real-Time Dashboard**: Web-based interface for monitoring logs, analyzing traffic, and inspecting request/response data
+- **Authentication**: Built-in support for basic authentication with `--auth` flag
+- **SSL/TLS Support**: Generate and manage self-signed certificates with `--ssl` flag
+- **Flexible Configuration**: Command-line arguments for host, port, authentication, and SSL configuration
+- **Tunneling Capabilities**: Support for Cloudflare and ngrok for secure external access
+- **Multi-Provider Support**: Extensible architecture for supporting multiple LLM providers (OpenAI, Anthropic, etc.)
+- **Advanced Routing**: Route requests based on conditions, headers, and custom rules
+
+## Quick Start
+
+### Prerequisites
+- Python 3.12+
+- Ollama running locally (or accessible network address)
+
+### Setup
+
+1. **Clone and Configure**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Start the Proxy**
+   ```bash
+   make run
+   ```
+
+3. **Access the Dashboard**
+   Open your browser and navigate to: `http://localhost:11435/app/login`
+
+4. **Configure Your LLM Clients**
+   Replace your Ollama endpoint with:
+   ```
+   http://localhost:11435
+   ```
+
+### Command-Line Options
+
+```bash
+# Basic startup
+python main.py
+
+# With SSL (self-signed certificate)
+python main.py --ssl
+
+# Custom host and port
+python main.py --host 0.0.0.0 --port 8443
+
+# With authentication
+python main.py --auth username:password
+
+# Combine options
+python main.py --ssl --host 0.0.0.0 --port 8443 --auth admin:securepassword
+```
+
+## Dashboard
+
+Proxify LLM provides a comprehensive web-based dashboard for monitoring all LLM traffic:
+
+### Overview Tab
+![Dashboard Overview](docs/screenshot-overview.png)
+View high-level statistics including response times, success rates, and system performance metrics.
+
+### Request Details
+![Request Details](docs/screenshot-request.png)
+Inspect individual requests with full request metadata, headers, body content, and response information.
+
+### Request Log
+![Request Log](docs/screenshot-log.png)
+Browse history of all API calls with filtering and search capabilities to find specific requests.
+
+### Response Analysis
+![Response Analysis](docs/screenshot-response.png)
+View detailed response data including model outputs, processing time, and evaluation metrics.
+
+## Use Cases
+
+### 1. **Security & Access Control**
+Monitor and authenticate all requests to your LLM infrastructure. Implement role-based access and audit trails for compliance.
+
+### 2. **Honeypot & Threat Detection**
+Capture and analyze suspicious patterns, unauthorized access attempts, and malicious requests targeting your LLM.
+
+### 3. **Usage Analytics & Cost Tracking**
+Track all API usage with detailed metrics to monitor costs and identify optimization opportunities.
+
+### 4. **Reverse Engineering & Integration Testing**
+Understand how external tools and applications communicate with your LLM. Useful for integration testing and debugging.
+
+### 5. **Development & Debugging**
+Inspect full request/response cycle during development to debug integration issues and validate API behavior.
+
+## Development Roadmap
+
+- [x] Phase 1: Basic Proxy Server for Ollama
+  - Basic proxy functionality
+  - Request/response logging to files
+  
+- [x] Phase 2: Web Dashboard
+  - Real-time log monitoring dashboard
+  - Request/response inspection
+  
+- [ ] Phase 3: Tunneling & External Access
+  - Cloudflare tunnels support
+  - ngrok integration
+  
+- [ ] Phase 4: Multi-Provider Support
+  - OpenAI API support
+  - Anthropic API support
+  - Advanced routing rules by provider
+
+## Configuration
+
+### Environment Variables
+
+See `.env.example` for all available configuration options:
+
+```env
+PROXY_HOST=0.0.0.0              # Host to bind proxy to
+PROXY_PORT=8000                 # Port to bind proxy to
+LOG_FOLDER=logs                 # Directory for storing logs
+LOG_RETAIN_DAYS=7               # Days to keep logs
+ADMIN_USERNAME=admin            # Dashboard login username
+ADMIN_PASSWORD=adminpassword    # Dashboard login password
+SECRET_KEY=<random-key>         # Secret key for session management
+OLLAMA_HOST=http://localhost    # Ollama server address
+OLLAMA_PORT=11434               # Ollama server port
+```
+
+## Architecture
+
+```
+┌─────────────┐
+│  Client App │
+└──────┬──────┘
+       │ HTTP/HTTPS
+       ▼
+┌──────────────────────────┐
+│  Proxify LLM             │
+│  ┌────────────────────┐  │
+│  │ Authentication     │  │
+│  │ SSL/TLS            │  │
+│  │ Request Logging    │  │
+│  │ Response Logging   │  │
+│  └────────────────────┘  │
+└──────┬───────────────────┘
+       │ HTTP
+       ▼
+┌──────────────────┐
+│  Ollama Server   │
+│  (or other LLM)  │
+└──────────────────┘
+```
+
+## License
+
+[Add your license here]
+
+## Support
+
+For issues, questions, or contributions, please open an issue or submit a pull request.
