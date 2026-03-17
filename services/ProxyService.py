@@ -3,7 +3,7 @@ import uuid
 
 import httpx
 from fastapi import Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from config.settings import settings
 from inc.LogHelpers import  logger
@@ -19,6 +19,10 @@ from inc.ProxyHelpers import build_upstream_url, extract_chat_response, is_chat_
 
 
 async def handle_proxy_request(path: str, request: Request) -> StreamingResponse:
+    normalized_path = path.lstrip("/")
+    if normalized_path == "favicon.ico" or normalized_path == ".well-known" or normalized_path.startswith(".well-known/"):
+        return JSONResponse(content={})
+
     request_id = str(uuid.uuid4())
     start = time.time()
     method = request.method

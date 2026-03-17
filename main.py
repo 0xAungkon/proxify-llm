@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from config.settings import settings
 from inc.LogHelpers import configure_logger, logger
@@ -11,6 +12,7 @@ configure_logger(settings.log_folder, settings.log_retention_days)
 logger.info("Logger configured")
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(health_router)
 app.include_router(common_router)
 app.include_router(admin_router)
