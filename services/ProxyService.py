@@ -7,7 +7,14 @@ from fastapi.responses import StreamingResponse
 
 from config.settings import settings
 from inc.LogHelpers import  logger
-from inc.LLMLogHelpers import append_assistant_response, append_response_end, create_log_file, write_response_chunk
+from inc.LLMRequestLogHelpers import (
+    append_assistant_response,
+    append_response_end,
+    build_log_dir,
+    create_log_file,
+    schedule_log_retention_cleanup,
+    write_response_chunk,
+)
 from inc.ProxyHelpers import build_upstream_url, extract_chat_response, is_chat_path, prepare_request_payload
 
 
@@ -18,6 +25,9 @@ async def handle_proxy_request(path: str, request: Request) -> StreamingResponse
     logger.info(f"[{request_id}] Incoming request {method} /{path}")
 
     request_data = await prepare_request_payload(request=request)
+    log_dir = build_log_dir(log_folder=settings.log_folder, path=path)
+    schedule_log_retention_cleanup(log_dir=log_dir, retention_days=settings.log_retention_days)
+
     log_file = create_log_file(
         log_folder=settings.log_folder,
         request_id=request_id,

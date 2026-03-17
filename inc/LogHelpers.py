@@ -1,12 +1,10 @@
 import os
 import sys
 import time
-from typing import Any
-
 from loguru import logger
 
 
-def configure_logger(log_folder: str, level: str = "INFO") -> None:
+def configure_logger(log_folder: str, retention_days: int = 10, level: str = "INFO") -> None:
 	os.makedirs(log_folder, exist_ok=True)
 	app_log_file = os.path.join(log_folder, "app.log")
 
@@ -20,7 +18,7 @@ def configure_logger(log_folder: str, level: str = "INFO") -> None:
 		app_log_file,
 		level=level.upper(),
 		rotation="10 MB",
-		retention="10 days",
+		retention=f"{retention_days} days",
 		compression="zip",
 		format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
 	)
