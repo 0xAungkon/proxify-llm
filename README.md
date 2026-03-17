@@ -1,6 +1,12 @@
 # Proxify LLM
 
+
+
 A sophisticated proxy server for LLM providers designed to provide **security**, **monitoring**, and **intelligence** for your language models. Proxify LLM acts as a protective layer between your applications and LLM backends, providing comprehensive logging, authentication, request inspection, and detailed analytics.
+
+
+![Banner](docs/banner.png) 
+
 
 ## What is Proxify LLM?
 
