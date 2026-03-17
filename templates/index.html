@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Monitoring Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <style>
         /* Custom scrollbar to match DevTools aesthetic */
         ::-webkit-scrollbar {
@@ -40,14 +41,36 @@
         details[open] > summary::before {
             transform: rotate(90deg);
         }
+
+        /* Resizer active state */
+        #sidebar-resizer.active { background: #8ab4f8; }
+
+        /* Context menu — never inherits select-none */
+        #ctx-menu { user-select: none; }
     </style>
 </head>
-<body class="bg-[#242424] text-[#cccccc] font-sans text-[13px] h-screen flex flex-col overflow-hidden select-none">
+<body class="bg-[#242424] text-[#cccccc] font-sans text-[13px] h-screen flex flex-col overflow-hidden">
 
     <div class="flex flex-1 overflow-hidden">
         
-        <div class="w-[42%] border-r border-[#444] flex flex-col bg-[#202124]">
-            <!-- Sidebar column headers -->
+        <div id="sidebar-panel" class="border-r border-[#444] flex flex-col bg-[#202124] flex-shrink-0 min-w-[180px] select-none" style="width:42%">
+            <!-- Sticky search + clear all -->
+            <div class="border-b border-[#444] px-2 py-1.5 flex items-center gap-1.5 flex-shrink-0 bg-[#202124]">
+                <div class="flex-1 flex items-center gap-1.5 bg-[#2a2a2a] border border-[#3a3a3a] rounded px-2 py-[3px] focus-within:border-[#8ab4f8] transition-colors">
+                    <i data-lucide="search" class="w-3 h-3 text-[#666] flex-shrink-0"></i>
+                    <input id="sidebar-search" type="text" placeholder="Search path..."
+                        oninput="applyFilters()"
+                        class="flex-1 bg-transparent text-[#ccc] text-[11px] placeholder-[#555] focus:outline-none min-w-0">
+                    <button id="search-clear-btn" onclick="clearSearch()" class="hidden text-[#666] hover:text-[#ccc] flex-shrink-0">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
+                </div>
+                <button onclick="clearAllLogs()" title="Clear all logs"
+                    class="flex-shrink-0 p-1 rounded text-[#888] hover:text-[#f28b82] hover:bg-[#3a1a1a] border border-[#3a3a3a] transition-colors">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+            <!-- Column headers -->
             <div class="border-b border-[#444] px-2 py-1 font-semibold text-[10px] uppercase tracking-wide text-[#888] flex items-center gap-2 flex-shrink-0">
                 <span class="w-14 flex-shrink-0">Method</span>
                 <span class="flex-1 truncate">Path</span>
@@ -57,7 +80,56 @@
             <div id="network-list" class="flex-1 overflow-y-auto outline-none" tabindex="0"></div>
         </div>
 
-        <div class="flex-1 flex flex-col bg-[#242424] min-w-0">
+        <!-- Draggable resizer -->
+        <div id="sidebar-resizer" class="w-[4px] cursor-col-resize bg-[#383838] hover:bg-[#8ab4f8] flex-shrink-0 transition-colors"></div>
+
+        <div class="flex-1 flex flex-col bg-[#242424] min-w-0 overflow-hidden">
+            <!-- Filter bar -->
+            <div class="flex items-center gap-2 px-3 py-1.5 border-b border-[#3a3a3a] bg-[#1e1e1e] flex-shrink-0 flex-wrap">
+                <!-- Method -->
+                <select id="filter-method" multiple size="1" onchange="applyFilters()"
+                    class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] cursor-pointer focus:outline-none focus:border-[#8ab4f8] transition-colors">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+                <!-- Status -->
+                <select id="filter-status" multiple size="1" onchange="applyFilters()"
+                    class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] cursor-pointer focus:outline-none focus:border-[#8ab4f8] transition-colors">
+                    <option value="2">2xx</option>
+                    <option value="3">3xx</option>
+                    <option value="4">4xx</option>
+                    <option value="5">5xx</option>
+                </select>
+                <!-- Time range -->
+                <select id="filter-time" onchange="onTimeRangeChange()"
+                    class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] cursor-pointer focus:outline-none focus:border-[#8ab4f8] transition-colors">
+                    <option value="">All Time</option>
+                    <option value="1m">Last 1 minute</option>
+                    <option value="5m">Last 5 minutes</option>
+                    <option value="15m">Last 15 minutes</option>
+                    <option value="30m">Last 30 minutes</option>
+                    <option value="1h">Last 1 hour</option>
+                    <option value="custom">Custom range</option>
+                </select>
+                <!-- Custom date pickers -->
+                <div id="custom-date-range" class="hidden items-center gap-1">
+                    <input type="datetime-local" id="filter-date-from" onchange="applyFilters()"
+                        class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] focus:outline-none focus:border-[#8ab4f8]">
+                    <span class="text-[#555] text-[11px]">&#8594;</span>
+                    <input type="datetime-local" id="filter-date-to" onchange="applyFilters()"
+                        class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] focus:outline-none focus:border-[#8ab4f8]">
+                </div>
+                <!-- Clear filters -->
+                <button id="clear-filters-btn" onclick="clearFilters()" style="display:none"
+                    class="ml-auto flex items-center gap-1 text-[11px] text-[#f6c90e] hover:text-[#eee] transition-colors">
+                    <i data-lucide="filter-x" class="w-3 h-3"></i>
+                    Clear filters
+                </button>
+            </div>
+
             <!-- Tab bar -->
             <div id="tab-bar" class="flex border-b border-[#444] px-2 pt-1 gap-5 text-[13px] flex-shrink-0">
                 <button onclick="switchTab('overview')" data-tab="overview" class="tab-btn flex items-center justify-center cursor-pointer pb-1 border-b-2 text-[#8ab4f8] border-[#8ab4f8]">Overview</button>
@@ -65,7 +137,7 @@
                 <button onclick="switchTab('response')" data-tab="response" class="tab-btn flex items-center justify-center cursor-pointer pb-1 border-b-2 text-[#aaa] border-transparent hover:text-[#eee]">Response</button>
             </div>
 
-            <div id="network-details" class="flex-1 overflow-y-auto">
+            <div id="network-details" class="flex-1 overflow-y-auto select-text">
                 <div class="flex h-full items-center justify-center text-[#777]">
                     Select a log entry to view details
                 </div>
@@ -80,10 +152,22 @@
     </div>
 
     <script>
-        let logFiles    = [];
-        let activePath  = null;
-        let activeTab   = 'overview';
-        let currentLog  = null;   // last loaded log meta (from /admin/logs/:path)
+        let logFiles      = [];
+        let filteredFiles = [];
+        let activePath    = null;
+        let activeTab     = 'overview';
+        let currentLog    = null;
+    let ctxLog        = null;
+
+        // ── Filter state ───────────────────────────────────────────────────────
+        let fSearch    = '';
+        let fMethods   = [];
+        let fStatuses  = [];
+        let fTime      = '';
+        let fDateFrom  = '';
+        let fDateTo    = '';
+
+        const FILTER_STORAGE_KEY = 'proxify_dashboard_filters_v1';
 
         // ── Helpers ────────────────────────────────────────────────────────────
         function escapeHtml(v) {
@@ -137,17 +221,183 @@
             return 'text-[#aaa]';
         }
 
+        function getSelectedValues(id) {
+            const el = document.getElementById(id);
+            if (!el) return [];
+            return Array.from(el.selectedOptions).map(opt => opt.value).filter(Boolean);
+        }
+
+        function setSelectedValues(id, values) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const selected = new Set(Array.isArray(values) ? values : []);
+            Array.from(el.options).forEach(opt => { opt.selected = selected.has(opt.value); });
+        }
+
+        function enableSingleRowMultiSelect(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            el.addEventListener('mousedown', e => {
+                if (e.target.tagName !== 'OPTION') return;
+                e.preventDefault();
+                e.target.selected = !e.target.selected;
+                applyFilters();
+            });
+        }
+
+        function hasActiveFilters() {
+            return Boolean(fSearch || fMethods.length || fStatuses.length || fTime || fDateFrom || fDateTo);
+        }
+
+        function saveFiltersToStorage() {
+            const payload = {
+                search: fSearch,
+                methods: fMethods,
+                statuses: fStatuses,
+                time: fTime,
+                dateFrom: fDateFrom,
+                dateTo: fDateTo,
+            };
+            localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(payload));
+        }
+
+        function restoreFiltersFromStorage() {
+            try {
+                const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+                if (!raw) return;
+                const saved = JSON.parse(raw);
+                const searchEl = document.getElementById('sidebar-search');
+                const timeEl = document.getElementById('filter-time');
+                const fromEl = document.getElementById('filter-date-from');
+                const toEl = document.getElementById('filter-date-to');
+
+                if (searchEl) searchEl.value = saved.search || '';
+                if (timeEl) timeEl.value = saved.time || '';
+                if (fromEl) fromEl.value = saved.dateFrom || '';
+                if (toEl) toEl.value = saved.dateTo || '';
+
+                setSelectedValues('filter-method', saved.methods || []);
+                setSelectedValues('filter-status', saved.statuses || []);
+
+                onTimeRangeChange();
+            } catch (_) {}
+        }
+
+        // ── Filtering ──────────────────────────────────────────────────────────
+        function applyFilters() {
+            fSearch   = (document.getElementById('sidebar-search')?.value   || '').trim().toLowerCase();
+            fMethods  = getSelectedValues('filter-method');
+            fStatuses = getSelectedValues('filter-status');
+            fTime     = (document.getElementById('filter-time')?.value      || '');
+            fDateFrom = (document.getElementById('filter-date-from')?.value || '');
+            fDateTo   = (document.getElementById('filter-date-to')?.value   || '');
+
+            // Show/hide clear-search X
+            const searchClearBtn = document.getElementById('search-clear-btn');
+            if (searchClearBtn) searchClearBtn.classList.toggle('hidden', !fSearch);
+
+            // Show/hide clear-filters button
+            const clearBtn = document.getElementById('clear-filters-btn');
+            const hasFilter = fMethods.length || fStatuses.length || fTime || fDateFrom || fDateTo;
+            if (clearBtn) clearBtn.style.display = hasFilter ? '' : 'none';
+
+            const now = Date.now();
+            const timeMap = { '1m': 60*1000, '5m': 5*60*1000, '15m': 15*60*1000, '30m': 30*60*1000, '1h': 60*60*1000 };
+
+            filteredFiles = logFiles.filter(log => {
+                const apiPath = '/' + (log.relative_path.split('/').slice(0, -1).join('/') || log.relative_path);
+                const { method, status } = parseName(log.file_name);
+                const logTime = new Date(log.date).getTime();
+
+                if (fSearch && !apiPath.toLowerCase().includes(fSearch)) return false;
+                if (fMethods.length && !fMethods.includes(method.toUpperCase())) return false;
+                if (fStatuses.length && !fStatuses.some(s => String(status).startsWith(s))) return false;
+
+                if (fTime && fTime !== 'custom') {
+                    if (now - logTime > (timeMap[fTime] || Infinity)) return false;
+                } else if (fTime === 'custom') {
+                    if (fDateFrom) {
+                        const from = new Date(fDateFrom).getTime();
+                        if (logTime < from) return false;
+                    }
+                    if (fDateTo) {
+                        const to = new Date(fDateTo).getTime();
+                        if (logTime > to) return false;
+                    }
+                }
+
+                return true;
+            });
+
+            saveFiltersToStorage();
+
+            renderList();
+        }
+
+        function onTimeRangeChange() {
+            const val = document.getElementById('filter-time')?.value || '';
+            const customRange = document.getElementById('custom-date-range');
+            if (customRange) {
+                customRange.classList.toggle('hidden', val !== 'custom');
+                customRange.classList.toggle('flex', val === 'custom');
+            }
+            applyFilters();
+        }
+
+        function clearFilters() {
+            const el = (id) => document.getElementById(id);
+            setSelectedValues('filter-method', []);
+            setSelectedValues('filter-status', []);
+            if (el('filter-time'))      el('filter-time').value      = '';
+            if (el('filter-date-from')) el('filter-date-from').value = '';
+            if (el('filter-date-to'))   el('filter-date-to').value   = '';
+            const customRange = document.getElementById('custom-date-range');
+            if (customRange) { customRange.classList.add('hidden'); customRange.classList.remove('flex'); }
+            applyFilters();
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('sidebar-search');
+            if (input) input.value = '';
+            applyFilters();
+        }
+
+        async function clearAllLogs() {
+            if (!confirm('Delete ALL log files? This cannot be undone.')) return;
+            try {
+                const res = await fetch('/admin/logs/clear', { method: 'DELETE', credentials: 'same-origin' });
+                if (res.status === 401) { window.location.href = '/app/login'; return; }
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Clear failed.');
+                logFiles = [];
+                filteredFiles = [];
+                activePath = null;
+                currentLog = null;
+                document.getElementById('log-count').textContent = '0 logs';
+                renderList();
+                document.getElementById('network-details').innerHTML =
+                    '<div class="flex h-full items-center justify-center text-[#777]">All logs cleared.</div>';
+            } catch (e) {
+                alert('Clear failed: ' + (e.message || 'Unknown error'));
+            }
+        }
+
         // ── Sidebar ────────────────────────────────────────────────────────────
         function renderList() {
             const container = document.getElementById('network-list');
             container.innerHTML = '';
 
-            if (!logFiles.length) {
-                container.innerHTML = '<div class="px-3 py-3 text-[#777]">No log files available.</div>';
+            const source = filteredFiles.length || hasActiveFilters() ? filteredFiles : logFiles;
+
+            if (!source.length) {
+                container.innerHTML = '<div class="px-3 py-3 text-[#777]">' +
+                    (logFiles.length ? 'No results match the current filters.' : 'No log files available.') +
+                    '</div>';
                 return;
             }
 
-            logFiles.forEach(log => {
+            source.forEach(log => {
                 const sel = log.relative_path === activePath;
                 const apiPath = '/' + (log.relative_path.split('/').slice(0, -1).join('/') || log.relative_path);
                 const { method, status } = parseName(log.file_name);
@@ -161,6 +411,12 @@
                     renderList();
                     loadLogDetails(log.relative_path);
                 };
+
+                row.addEventListener('contextmenu', e => {
+                    e.preventDefault();
+                    ctxLog = log;
+                    showCtxMenu(e.clientX, e.clientY);
+                });
 
                 row.innerHTML =
                     `<span class="inline-block text-[10px] font-bold px-1 py-px rounded flex-shrink-0 w-14 text-center truncate ${methodCls(method)}">${escapeHtml(method)}</span>` +
@@ -366,14 +622,16 @@
 
                 logFiles = (data.logs || []).sort((a, b) => new Date(b.date) - new Date(a.date));
                 document.getElementById('log-count').textContent = logFiles.length + ' logs';
-                renderList();
+                applyFilters();
 
-                if (logFiles.length > 0) {
-                    activePath = logFiles[0].relative_path;
+                const source = filteredFiles.length || hasActiveFilters() ? filteredFiles : logFiles;
+
+                if (source.length > 0) {
+                    activePath = source[0].relative_path;
                     renderList();
                     await loadLogDetails(activePath);
                 } else {
-                    renderError('No log files found.');
+                    renderError(logFiles.length ? 'No log files match current filters.' : 'No log files found.');
                 }
             } catch (e) {
                 renderError(e.message || 'Unable to load logs.');
@@ -394,7 +652,116 @@
             }
         }
 
+        enableSingleRowMultiSelect('filter-method');
+        enableSingleRowMultiSelect('filter-status');
+        restoreFiltersFromStorage();
         loadLogs();
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+        // Lucide may already be loaded before DOMContentLoaded fires
+        if (document.readyState !== 'loading') lucide.createIcons();
+
+        // ── Context menu ────────────────────────────────────────────────────────
+        function showCtxMenu(x, y) {
+            const menu = document.getElementById('ctx-menu');
+            menu.classList.remove('hidden');
+            const vw = window.innerWidth, vh = window.innerHeight;
+            const mw = 190, mh = 215;
+            menu.style.left = (x + mw > vw ? vw - mw - 4 : x) + 'px';
+            menu.style.top  = (y + mh > vh ? vh - mh - 4 : y) + 'px';
+        }
+        function hideCtxMenu() {
+            document.getElementById('ctx-menu').classList.add('hidden');
+            ctxLog = null;
+        }
+        document.addEventListener('click',   hideCtxMenu);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCtxMenu(); });
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctxMenuEl = document.getElementById('ctx-menu');
+            if (!ctxMenuEl) return;
+            ctxMenuEl.addEventListener('click', async e => {
+                e.stopPropagation();
+                const item = e.target.closest('.ctx-item');
+                if (!item || !ctxLog) return;
+                const action = item.dataset.action;
+                const rel    = ctxLog.relative_path;
+                const enc    = rel.split('/').map(encodeURIComponent).join('/');
+                hideCtxMenu();
+                if (action === 'view') {
+                    activePath = rel; renderList(); await loadLogDetails(rel);
+                } else if (action === 'curl') {
+                    await actionCurl(enc);
+                } else if (action === 'copy') {
+                    try {
+                        const r = await fetch(buildLogUrl(rel), { credentials: 'same-origin' });
+                        const d = await r.json();
+                        await navigator.clipboard.writeText(JSON.stringify(d.log, null, 2));
+                    } catch (err) { alert('Copy failed: ' + err.message); }
+                } else if (action === 'download') {
+                    const a = document.createElement('a');
+                    a.href = '/admin/logs/download/' + enc;
+                    a.download = ctxLog.file_name; a.click();
+                } else if (action === 'replay') {
+                    activePath = rel; renderList();
+                    await loadLogDetails(rel);
+                    switchTab('overview');
+                    setTimeout(() => actionReplay(enc), 150);
+                } else if (action === 'delete') {
+                    await actionDelete(rel, enc);
+                }
+            });
+        });
+
+        // ── Sidebar resize ──────────────────────────────────────────────────────
+        (function () {
+            const resizer = document.getElementById('sidebar-resizer');
+            const panel   = document.getElementById('sidebar-panel');
+            let dragging  = false;
+            resizer.addEventListener('mousedown', e => {
+                dragging = true;
+                resizer.classList.add('active');
+                document.body.style.cursor     = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                const left = panel.parentElement.getBoundingClientRect().left;
+                const newW = e.clientX - left;
+                const min  = 180;
+                const max  = panel.parentElement.offsetWidth * 0.75;
+                panel.style.width = Math.min(Math.max(newW, min), max) + 'px';
+            });
+            document.addEventListener('mouseup', () => {
+                if (!dragging) return;
+                dragging = false;
+                resizer.classList.remove('active');
+                document.body.style.cursor     = '';
+                document.body.style.userSelect = '';
+            });
+        })();
     </script>
+
+    <!-- Right-click context menu -->
+    <div id="ctx-menu" class="hidden fixed z-50 bg-[#252526] border border-[#454545] rounded-md shadow-2xl py-1 text-[12px]" style="min-width:175px">
+        <div class="ctx-item flex items-center gap-2.5 px-3 py-[6px] hover:bg-[#094771] cursor-pointer text-[#ccc]" data-action="view">
+            <span class="text-[#888] w-3.5 text-center">⊙</span> View Details
+        </div>
+        <div class="ctx-item flex items-center gap-2.5 px-3 py-[6px] hover:bg-[#094771] cursor-pointer text-[#ccc]" data-action="curl">
+            <span class="text-[#888] w-3.5 text-center">⧉</span> Copy cURL
+        </div>
+        <div class="ctx-item flex items-center gap-2.5 px-3 py-[6px] hover:bg-[#094771] cursor-pointer text-[#ccc]" data-action="copy">
+            <span class="text-[#888] w-3.5 text-center">⎘</span> Copy Log JSON
+        </div>
+        <div class="ctx-item flex items-center gap-2.5 px-3 py-[6px] hover:bg-[#094771] cursor-pointer text-[#6fcf97]" data-action="download">
+            <span class="w-3.5 text-center">↓</span> Download
+        </div>
+        <div class="ctx-item flex items-center gap-2.5 px-3 py-[6px] hover:bg-[#094771] cursor-pointer text-[#c792ea]" data-action="replay">
+            <span class="w-3.5 text-center">▶</span> Replay
+        </div>
+        <div class="border-t border-[#454545] my-1"></div>
+        <div class="ctx-item flex items-center gap-2.5 px-3 py-[6px] hover:bg-[#3a1a1a] cursor-pointer text-[#f28b82]" data-action="delete">
+            <span class="w-3.5 text-center">✕</span> Delete Log
+        </div>
+    </div>
 </body>
 </html>
