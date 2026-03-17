@@ -87,22 +87,32 @@
             <!-- Filter bar -->
             <div class="flex items-center gap-2 px-3 py-1.5 border-b border-[#3a3a3a] bg-[#1e1e1e] flex-shrink-0 flex-wrap">
                 <!-- Method -->
-                <select id="filter-method" multiple size="1" onchange="applyFilters()"
-                    class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] cursor-pointer focus:outline-none focus:border-[#8ab4f8] transition-colors">
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="PATCH">PATCH</option>
-                    <option value="DELETE">DELETE</option>
-                </select>
+                <div class="relative" id="filter-method-wrap">
+                    <button type="button" id="filter-method-btn" onclick="toggleFilterMenu('method', event)"
+                        class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] min-w-[110px] text-left hover:border-[#8ab4f8] transition-colors">
+                        Method: All
+                    </button>
+                    <div id="filter-method-menu" class="hidden absolute z-40 mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded p-1.5 min-w-[130px]">
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="method-opt" value="GET" onchange="applyFilters()">GET</label>
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="method-opt" value="POST" onchange="applyFilters()">POST</label>
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="method-opt" value="PUT" onchange="applyFilters()">PUT</label>
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="method-opt" value="PATCH" onchange="applyFilters()">PATCH</label>
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="method-opt" value="DELETE" onchange="applyFilters()">DELETE</label>
+                    </div>
+                </div>
                 <!-- Status -->
-                <select id="filter-status" multiple size="1" onchange="applyFilters()"
-                    class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] cursor-pointer focus:outline-none focus:border-[#8ab4f8] transition-colors">
-                    <option value="2">2xx</option>
-                    <option value="3">3xx</option>
-                    <option value="4">4xx</option>
-                    <option value="5">5xx</option>
-                </select>
+                <div class="relative" id="filter-status-wrap">
+                    <button type="button" id="filter-status-btn" onclick="toggleFilterMenu('status', event)"
+                        class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] min-w-[105px] text-left hover:border-[#8ab4f8] transition-colors">
+                        Status: All
+                    </button>
+                    <div id="filter-status-menu" class="hidden absolute z-40 mt-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded p-1.5 min-w-[120px]">
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="status-opt" value="2" onchange="applyFilters()">2xx</label>
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="status-opt" value="3" onchange="applyFilters()">3xx</label>
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="status-opt" value="4" onchange="applyFilters()">4xx</label>
+                        <label class="flex items-center gap-1.5 px-1 py-0.5 text-[11px] cursor-pointer"><input type="checkbox" class="status-opt" value="5" onchange="applyFilters()">5xx</label>
+                    </div>
+                </div>
                 <!-- Time range -->
                 <select id="filter-time" onchange="onTimeRangeChange()"
                     class="bg-[#2a2a2a] border border-[#3a3a3a] text-[#ccc] rounded px-2 py-[3px] text-[11px] cursor-pointer focus:outline-none focus:border-[#8ab4f8] transition-colors">
@@ -221,29 +231,35 @@
             return 'text-[#aaa]';
         }
 
-        function getSelectedValues(id) {
-            const el = document.getElementById(id);
-            if (!el) return [];
-            return Array.from(el.selectedOptions).map(opt => opt.value).filter(Boolean);
+        function getCheckedValues(className) {
+            return Array.from(document.querySelectorAll('.' + className + ':checked')).map(el => el.value);
         }
 
-        function setSelectedValues(id, values) {
-            const el = document.getElementById(id);
-            if (!el) return;
+        function setCheckedValues(className, values) {
             const selected = new Set(Array.isArray(values) ? values : []);
-            Array.from(el.options).forEach(opt => { opt.selected = selected.has(opt.value); });
+            document.querySelectorAll('.' + className).forEach(el => { el.checked = selected.has(el.value); });
         }
 
-        function enableSingleRowMultiSelect(id) {
-            const el = document.getElementById(id);
-            if (!el) return;
+        function updateMultiFilterLabels() {
+            const methodBtn = document.getElementById('filter-method-btn');
+            const statusBtn = document.getElementById('filter-status-btn');
+            if (methodBtn) methodBtn.textContent = fMethods.length ? `Method (${fMethods.length})` : 'Method: All';
+            if (statusBtn) statusBtn.textContent = fStatuses.length ? `Status (${fStatuses.length})` : 'Status: All';
+        }
 
-            el.addEventListener('mousedown', e => {
-                if (e.target.tagName !== 'OPTION') return;
-                e.preventDefault();
-                e.target.selected = !e.target.selected;
-                applyFilters();
-            });
+        function closeFilterMenus() {
+            document.getElementById('filter-method-menu')?.classList.add('hidden');
+            document.getElementById('filter-status-menu')?.classList.add('hidden');
+        }
+
+        function toggleFilterMenu(kind, event) {
+            event.stopPropagation();
+            const targetId = kind === 'method' ? 'filter-method-menu' : 'filter-status-menu';
+            const otherId = kind === 'method' ? 'filter-status-menu' : 'filter-method-menu';
+            const target = document.getElementById(targetId);
+            const other = document.getElementById(otherId);
+            other?.classList.add('hidden');
+            target?.classList.toggle('hidden');
         }
 
         function hasActiveFilters() {
@@ -277,8 +293,8 @@
                 if (fromEl) fromEl.value = saved.dateFrom || '';
                 if (toEl) toEl.value = saved.dateTo || '';
 
-                setSelectedValues('filter-method', saved.methods || []);
-                setSelectedValues('filter-status', saved.statuses || []);
+                setCheckedValues('method-opt', saved.methods || []);
+                setCheckedValues('status-opt', saved.statuses || []);
 
                 onTimeRangeChange();
             } catch (_) {}
@@ -287,11 +303,13 @@
         // ── Filtering ──────────────────────────────────────────────────────────
         function applyFilters() {
             fSearch   = (document.getElementById('sidebar-search')?.value   || '').trim().toLowerCase();
-            fMethods  = getSelectedValues('filter-method');
-            fStatuses = getSelectedValues('filter-status');
+            fMethods  = getCheckedValues('method-opt');
+            fStatuses = getCheckedValues('status-opt');
             fTime     = (document.getElementById('filter-time')?.value      || '');
             fDateFrom = (document.getElementById('filter-date-from')?.value || '');
             fDateTo   = (document.getElementById('filter-date-to')?.value   || '');
+
+            updateMultiFilterLabels();
 
             // Show/hide clear-search X
             const searchClearBtn = document.getElementById('search-clear-btn');
@@ -347,8 +365,8 @@
 
         function clearFilters() {
             const el = (id) => document.getElementById(id);
-            setSelectedValues('filter-method', []);
-            setSelectedValues('filter-status', []);
+            setCheckedValues('method-opt', []);
+            setCheckedValues('status-opt', []);
             if (el('filter-time'))      el('filter-time').value      = '';
             if (el('filter-date-from')) el('filter-date-from').value = '';
             if (el('filter-date-to'))   el('filter-date-to').value   = '';
@@ -652,8 +670,11 @@
             }
         }
 
-        enableSingleRowMultiSelect('filter-method');
-        enableSingleRowMultiSelect('filter-status');
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#filter-method-wrap') && !e.target.closest('#filter-status-wrap')) {
+                closeFilterMenus();
+            }
+        });
         restoreFiltersFromStorage();
         loadLogs();
         document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
