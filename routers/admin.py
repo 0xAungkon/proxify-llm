@@ -4,8 +4,10 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 
 from config.settings import settings
 from inc.TokenManager import decrypt_token, encrypt_token
@@ -183,6 +185,94 @@ async def clear_admin_logs(_: dict[str, str | float] = Depends(require_admin_ses
 		"deleted": deleted,
 		**({"errors": errors} if errors else {}),
 	}
+
+
+@router.delete("/admin/logs/delete/{log_path:path}")
+async def delete_admin_log(
+	log_path: str,
+	_: dict[str, str | float] = Depends(require_admin_session),
+):
+	resolved_path = _resolve_log_path(log_path)
+	if not resolved_path.is_file():
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Path is not a file")
+	try:
+		resolved_path.unlink()
+	except OSError as exc:
+		raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+	return {"status": "success", "deleted": log_path}
+
+
+@router.get("/admin/logs/curl/{log_path:path}")
+async def get_admin_log_curl(
+	log_path: str,
+	_: dict[str, str | float] = Depends(require_admin_session),
+):
+	resolved_path = _resolve_log_path(log_path)
+	if not resolved_path.is_file():
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Path is not a file")
+	try:
+		log_data = json.loads(resolved_path.read_text(encoding="utf-8", errors="replace"))
+	except (json.JSONDecodeError, ValueError) as exc:
+		raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Unable to parse log file") from exc
+
+	method = log_data.get("method", "POST")
+	path = log_data.get("path", "").lstrip("/")
+	request_body = log_data.get("request")
+	upstream_url = f"http://{settings.ollama_host}:{settings.ollama_port}/{path}"
+
+	parts = [f"curl -X {method}", f"'{upstream_url}'"]
+	if request_body is not None:
+		body_str = json.dumps(request_body, separators=(",", ":")).replace("'", "'\\''")
+		parts.append("-H 'Content-Type: application/json'")
+		parts.append(f"-d '{body_str}'")
+
+	return {"status": "success", "curl": " \\\n  ".join(parts)}
+
+
+@router.get("/admin/logs/download/{log_path:path}")
+async def download_admin_log(
+	log_path: str,
+	_: dict[str, str | float] = Depends(require_admin_session),
+):
+	resolved_path = _resolve_log_path(log_path)
+	if not resolved_path.is_file():
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Path is not a file")
+	return FileResponse(
+		path=str(resolved_path),
+		filename=resolved_path.name,
+		media_type="application/json",
+	)
+
+
+@router.post("/admin/logs/replay/{log_path:path}")
+async def replay_admin_log(
+	log_path: str,
+	_: dict[str, str | float] = Depends(require_admin_session),
+):
+	resolved_path = _resolve_log_path(log_path)
+	if not resolved_path.is_file():
+		raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Path is not a file")
+	try:
+		log_data = json.loads(resolved_path.read_text(encoding="utf-8", errors="replace"))
+	except (json.JSONDecodeError, ValueError) as exc:
+		raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Unable to parse log file") from exc
+
+	method = log_data.get("method", "POST")
+	path = log_data.get("path", "").lstrip("/")
+	request_body = log_data.get("request")
+	upstream_url = f"http://{settings.ollama_host}:{settings.ollama_port}/{path}"
+
+	async def _stream():
+		async with httpx.AsyncClient(timeout=None) as client:
+			async with client.stream(
+				method,
+				upstream_url,
+				json=request_body if isinstance(request_body, dict) else None,
+			) as response:
+				async for chunk in response.aiter_bytes():
+					yield chunk
+
+	return StreamingResponse(_stream(), media_type="application/json")
 
 
 @router.get("/admin/logs/{log_path:path}")
