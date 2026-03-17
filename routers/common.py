@@ -6,7 +6,7 @@ from schema.LLMProviderSchema import LLMProviderSchema
 router = APIRouter(tags=["Common"])
 
 
-@router.post("/generate-api-token")
+@router.post("/common/generate-api-token")
 async def generate_api_token(llm_provider: LLMProviderSchema):
     data = {
         "base_url": llm_provider.base_url,
@@ -14,4 +14,4 @@ async def generate_api_token(llm_provider: LLMProviderSchema):
         "vendor": llm_provider.vendor,
     }
     encrypted_token = encrypt_token(str(data))
-    return {"api_token": encrypted_token}
+    return encrypted_token
