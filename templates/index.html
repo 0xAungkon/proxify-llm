@@ -1,27 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Monitoring Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+        // Initialize theme immediately to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
     <style>
-        /* Custom scrollbar to match DevTools aesthetic */
+        /* Theme CSS Variables */
+        :root[data-theme="dark"] {
+            --bg-primary: #242424;
+            --bg-secondary: #202124;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #cccccc;
+            --text-secondary: #888888;
+            --text-tertiary: #555555;
+            --border-color: #444444;
+            --border-secondary: #3a3a3a;
+            --highlight-color: #8ab4f8;
+            --success-color: #6fcf97;
+            --warning-color: #ffd700;
+            --danger-color: #f28b82;
+            --hover-bg: #3a3a3a;
+            --active-bg-danger: #3a1a1a;
+            --active-bg-danger-light: #2b1b1b;
+            --scrollbar-thumb: #555;
+            --scrollbar-track: #242424;
+        }
+
+        :root[data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #fafafa;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border-color: #e0e0e0;
+            --border-secondary: #d0d0d0;
+            --highlight-color: #1976d2;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --hover-bg: #f0f0f0;
+            --active-bg-danger: #ffebee;
+            --active-bg-danger-light: #ffcdd2;
+            --scrollbar-thumb: #c0c0c0;
+            --scrollbar-track: #f5f5f5;
+        }
+
+        /* Custom scrollbar with theme support */
         ::-webkit-scrollbar {
             width: 10px;
             height: 10px;
         }
         ::-webkit-scrollbar-track {
-            background: #242424; 
+            background: var(--scrollbar-track); 
         }
         ::-webkit-scrollbar-thumb {
-            background: #555; 
-            border: 2px solid #242424;
+            background: var(--scrollbar-thumb); 
+            border: 2px solid var(--scrollbar-track);
             border-radius: 6px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #777; 
+            background: #999; 
         }
         
         /* Triangle indicator for details tags */
@@ -47,6 +95,266 @@
 
         /* Context menu — never inherits select-none */
         #ctx-menu { user-select: none; }
+
+        /* Theme-aware body and main elements */
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        #sidebar-panel {
+            background-color: var(--bg-secondary);
+            border-right-color: var(--border-color);
+        }
+
+        #sidebar-resizer {
+            background-color: var(--text-tertiary);
+        }
+
+        #sidebar-resizer:hover {
+            background-color: var(--highlight-color);
+        }
+
+        input, select, button {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-color: var(--border-secondary);
+            transition: all 0.2s ease;
+        }
+
+        input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        input:focus, select:focus {
+            border-color: var(--highlight-color);
+        }
+
+        .border-b, .border-r, .border-t {
+            border-color: var(--border-color) !important;
+        }
+
+        .text-\[\#888\], .text-\[\#777\], .text-\[\#555\], .text-\[\#666\] {
+            color: var(--text-secondary) !important;
+        }
+
+        .bg-\[\#242424\], .bg-\[\#202124\], .bg-\[\#2a2a2a\], .bg-\[\#1e1e1e\] {
+            background-color: var(--bg-tertiary) !important;
+        }
+
+        .text-\[\#8ab4f8\] {
+            color: var(--highlight-color) !important;
+        }
+
+        /* Light mode text colors */
+        :root[data-theme="light"] .text-\[\#cccccc\],
+        :root[data-theme="light"] .text-\[\#eee\],
+        :root[data-theme="light"] .text-\[\#ccc\] {
+            color: #000000 !important;
+        }
+
+        :root[data-theme="light"] .text-\[\#888\],
+        :root[data-theme="light"] .text-\[\#777\],
+        :root[data-theme="light"] .text-\[\#666\],
+        :root[data-theme="light"] .text-\[\#aaa\] {
+            color: #333333 !important;
+        }
+
+        /* Request and Response text in light mode */
+        :root[data-theme="light"] pre,
+        :root[data-theme="light"] .whitespace-pre-wrap {
+            color: #000000 !important;
+        }
+
+        /* Light mode sidebar text colors */
+        :root[data-theme="light"] #network-list {
+            color: #000000 !important;
+        }
+
+        :root[data-theme="light"] #network-list .text-\[\#cccccc\] {
+            color: #000000 !important;
+        }
+
+        :root[data-theme="light"] #network-list .text-\[\#888\] {
+            color: #666666 !important;
+        }
+
+        :root[data-theme="light"] #network-list .text-\[\#b9c1cc\] {
+            color: #332222 !important;
+        }
+
+        /* HTTP method colors in light mode */
+        :root[data-theme="light"] .bg-\[\#1a4d2e\] {
+            background-color: #c8e6c9 !important;
+            color: #2e7d32 !important;
+        }
+
+        :root[data-theme="light"] .bg-\[\#1a2f4d\] {
+            background-color: #bbdefb !important;
+            color: #1565c0 !important;
+        }
+
+        :root[data-theme="light"] .bg-\[\#4d3d1a\] {
+            background-color: #fff9c4 !important;
+            color: #f57f17 !important;
+        }
+
+        :root[data-theme="light"] .bg-\[\#3d1a4d\] {
+            background-color: #f3e5f5 !important;
+            color: #7b1fa2 !important;
+        }
+
+        :root[data-theme="light"] .bg-\[\#4d1a1a\] {
+            background-color: #ffcdd2 !important;
+            color: #c62828 !important;
+        }
+
+        /* Sidebar item hover effect */
+        :root[data-theme="light"] #network-list > div:hover {
+            background-color: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        :root[data-theme="light"] #network-list > div[class*="bg-\[\#1a3a5c\]"] {
+            background-color: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* Tree view folder hover effect in light mode */
+        :root[data-theme="light"] .hover\:bg-\[\#2a2a2a\]:hover {
+            background-color: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        :root[data-theme="light"] .bg-\[\#1a3a5c\] {
+            background-color: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* Light mode folder text colors */
+        :root[data-theme="light"] .text-\[\#b9c1cc\] {
+            color: #333333 !important;
+        }
+
+        /* Light mode sidebar text colors */
+        :root[data-theme="light"] .text-\[\#cccccc\][title] {
+            color: #000000 !important;
+        }
+
+        :root[data-theme="light"] .hover\:bg-\[\#2a2a2a\]:hover {
+            background-color: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .border-\[\#444\], .border-\[\#3a3a3a\] {
+            border-color: var(--border-secondary) !important;
+        }
+
+        /* Light mode button and interactive hover effects */
+        :root[data-theme="light"] .hover\:text-\[\#c6dcff\]:hover {
+            color: #1976d2 !important;
+        }
+
+        :root[data-theme="light"] .hover\:border-\[\#8ab4f8\]:hover {
+            border-color: #1976d2 !important;
+        }
+
+        :root[data-theme="light"] .hover\:text-\[\#f28b82\]:hover {
+            color: #d32f2f !important;
+        }
+
+        :root[data-theme="light"] .hover\:bg-\[\#3a1a1a\]:hover {
+            background-color: #ffebee !important;
+        }
+
+        :root[data-theme="light"] .hover\:bg-\[\#2a2a2a\]:hover {
+            background-color: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        :root[data-theme="light"] .hover\:bg-\[\#333333\]:hover {
+            background-color: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        :root[data-theme="light"] .hover\:text-\[\#eee\]:hover {
+            color: #000000 !important;
+        }
+
+        :root[data-theme="light"] .hover\:text-\[\#3a3a3a\] {
+            color: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        :root[data-theme="light"] .hover\:text-\[\#ffd700\]:hover {
+            color: #ff9800 !important;
+        }
+
+        :root[data-theme="light"] .hover\:bg-\[\#094771\]:hover {
+            background-color: rgba(25, 118, 210, 0.1) !important;
+        }
+
+        :root[data-theme="light"] .hover\:text-\[\#ccc\]:hover {
+            color: #000000 !important;
+        }
+
+        /* Light mode focus effects */
+        :root[data-theme="light"] .focus\:border-\[\#8ab4f8\]:focus {
+            border-color: #1976d2 !important;
+        }
+
+        :root[data-theme="light"] .focus\:ring-\[\#8ab4f8\]:focus {
+            --tw-ring-color: rgba(25, 118, 210, 0.5) !important;
+        }
+
+        /* Light mode tab buttons */
+        :root[data-theme="light"] .tab-btn.text-\[\#8ab4f8\].border-\[\#8ab4f8\] {
+            color: #1976d2 !important;
+            border-bottom-color: #1976d2 !important;
+        }
+
+        :root[data-theme="light"] .tab-btn.text-\[\#aaa\]:hover {
+            color: #000000 !important;
+        }
+
+        /* Light mode context menu */
+        :root[data-theme="light"] #ctx-menu {
+            background-color: #ffffff !important;
+            border-color: var(--border-color) !important;
+        }
+
+        :root[data-theme="light"] .ctx-item {
+            color: #000000 !important;
+        }
+
+        :root[data-theme="light"] .ctx-item:hover {
+            background-color: rgba(25, 118, 210, 0.1) !important;
+        }
+
+        :root[data-theme="light"] .ctx-item.text-\[\#6fcf97\] {
+            color: #4caf50 !important;
+        }
+
+        :root[data-theme="light"] .ctx-item.text-\[\#c792ea\] {
+            color: #7b1fa2 !important;
+        }
+
+        :root[data-theme="light"] .ctx-item.text-\[\#f28b82\] {
+            color: #d32f2f !important;
+        }
+
+        :root[data-theme="light"] .ctx-item.text-\[\#f28b82\]:hover {
+            background-color: #ffebee !important;
+        }
+
+        :root[data-theme="light"] .border-\[\#454545\] {
+            border-color: var(--border-color) !important;
+        }
+
+        /* Light mode filter menus */
+        :root[data-theme="light"] #filter-method-menu,
+        :root[data-theme="light"] #filter-status-menu {
+            background-color: #ffffff !important;
+            border-color: var(--border-color) !important;
+        }
+
+        :root[data-theme="light"] #filter-method-menu label,
+        :root[data-theme="light"] #filter-status-menu label {
+            color: #000000 !important;
+        }
     </style>
 </head>
 <body class="bg-[#242424] text-[#cccccc] font-sans text-[13px] h-screen flex flex-col overflow-hidden">
@@ -167,12 +475,61 @@
         <span id="log-count">0 logs</span>
         <span class="w-px h-3 bg-[#444]"></span>
         <span>Copyright © 2026 0xAungkon. All rights reserved.</span>
-        <button id="logout-btn" onclick="window.location.href='/app/logout'" title="Logout" class="ml-auto p-1 rounded text-[#888] hover:text-[#f28b82] hover:bg-[#3a1a1a] border border-[#3a3a3a] transition-colors">
+        <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" class="ml-auto p-1 rounded text-[#888] hover:text-[#ffd700] hover:bg-[#333333] border border-[#3a3a3a] transition-colors">
+            <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+        <button id="logout-btn" onclick="handleLogout()" title="Logout" class="p-1 rounded text-[#888] hover:text-[#f28b82] hover:bg-[#3a1a1a] border border-[#3a3a3a] transition-colors">
             <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
     </div>
 
     <script type="module" src="/static/js/app.js"></script>
+    <script>
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            
+            if (theme === 'light') {
+                html.setAttribute('data-theme', 'light');
+                html.classList.add('light-mode');
+                html.classList.remove('dark-mode');
+                icon.setAttribute('data-lucide', 'sun');
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                html.classList.add('dark-mode');
+                html.classList.remove('light-mode');
+                icon.setAttribute('data-lucide', 'moon');
+            }
+            
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+        }
+
+        async function handleLogout() {
+           
+            window.location.href = '/app/logout';
+        }
+
+        // Initialize theme when DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeTheme);
+        // Also call it immediately in case DOM is already ready
+        if (document.readyState !== 'loading') {
+            initializeTheme();
+        }
+    </script>
 
     <!-- Right-click context menu -->
     <div id="ctx-menu" class="hidden fixed z-50 bg-[#252526] border border-[#454545] rounded-md shadow-2xl py-1 text-[12px]" style="min-width:175px">

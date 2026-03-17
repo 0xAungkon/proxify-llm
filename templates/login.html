@@ -1,19 +1,165 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Initialize theme immediately to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    <style>
+        /* Theme CSS Variables */
+        :root[data-theme="dark"] {
+            --bg-primary: #242424;
+            --bg-secondary: #202124;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #cccccc;
+            --text-secondary: #888888;
+            --text-tertiary: #555555;
+            --border-color: #444444;
+            --border-secondary: #3a3a3a;
+            --highlight-color: #8ab4f8;
+            --success-color: #6fcf97;
+            --warning-color: #ffd700;
+            --danger-color: #f28b82;
+        }
+
+        :root[data-theme="light"] {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #fafafa;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border-color: #e0e0e0;
+            --border-secondary: #d0d0d0;
+            --highlight-color: #1976d2;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .bg-\[\#202124\] {
+            background-color: var(--bg-secondary) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        .border-\[\#444\] {
+            border-color: var(--border-color) !important;
+        }
+
+        .text-\[\#8ab4f8\] {
+            color: var(--highlight-color) !important;
+        }
+
+        :root[data-theme="light"] .text-\[\#eee\],
+        :root[data-theme="light"] .text-\[#cccccc\],
+        :root[data-theme="light"] h2 {
+            color: #000000 !important;
+        }
+
+        :root[data-theme="light"] .text-sm {
+            color: #333333 !important;
+        }
+
+        :root[data-theme="light"] label {
+            color: var(--highlight-color) !important;
+        }
+
+        input {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+            transition: all 0.2s ease;
+        }
+
+        input::placeholder {
+            color: var(--text-tertiary) !important;
+        }
+
+        input:focus {
+            border-color: var(--highlight-color) !important;
+        }
+
+        button[type="submit"] {
+            background-color: var(--highlight-color);
+            color: var(--bg-secondary);
+            transition: all 0.2s ease;
+        }
+
+        button[type="submit"]:hover {
+            opacity: 0.9;
+        }
+
+        /* Light mode hover effects */
+        :root[data-theme="light"] button {
+            transition: all 0.2s ease;
+        }
+
+        :root[data-theme="light"] .hover\:text-\[\#ffd700\]:hover {
+            color: #ff9800 !important;
+        }
+
+        :root[data-theme="light"] .hover\:bg-\[\#333333\]:hover {
+            background-color: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* Light mode message styles */
+        :root[data-theme="light"] .border-\[\#2e7d32\] {
+            border-color: #4caf50 !important;
+        }
+
+        :root[data-theme="light"] .bg-\[\#1b2b1b\] {
+            background-color: #e8f5e9 !important;
+        }
+
+        :root[data-theme="light"] .text-\[\#a5d6a7\] {
+            color: #2e7d32 !important;
+        }
+
+        :root[data-theme="light"] .border-\[\#8b2e2e\] {
+            border-color: #d32f2f !important;
+        }
+
+        :root[data-theme="light"] .bg-\[\#2b1b1b\] {
+            background-color: #ffebee !important;
+        }
+
+        :root[data-theme="light"] .text-\[\#ffb4b4\] {
+            color: #c62828 !important;
+        }
+
+        /* Light mode text colors for dark theme classes */
+        :root[data-theme="light"] .text-\[\#777\] {
+            color: #666666 !important;
+        }
+    </style>
 </head>
 <body class="bg-[#242424] text-[#cccccc] font-sans h-screen flex items-center justify-center select-none">
 
     <div class="bg-[#202124] p-8 rounded-lg shadow-2xl w-full max-w-sm border border-[#444]">
         
-        <div class="text-center mb-8">
-            <h2 class="text-2xl font-semibold text-[#eee]">Welcome Back</h2>
-            <p class="text-sm text-[#777] mt-1">Please sign in to your account</p>
+        <div class="text-center mb-8 flex items-center justify-between">
+            <h2 class="text-2xl font-semibold text-[#eee] flex-1">Welcome Back</h2>
+            <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" class="p-1 rounded text-[#888] hover:text-[#ffd700] hover:bg-[#333333] border border-[#3a3a3a] transition-colors">
+                <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- Moon icon (shown in dark mode) -->
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
         </div>
+        <p class="text-sm text-[#777] text-center mb-8">Please sign in to your account</p>
 
         <div id="login-message" class="hidden mb-4 rounded-md border px-3 py-2 text-sm"></div>
         
@@ -40,6 +186,35 @@
     </div>
 
     <script>
+        function toggleTheme() {
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            
+            if (theme === 'light') {
+                html.setAttribute('data-theme', 'light');
+                if (icon) {
+                    icon.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+                }
+            } else {
+                html.setAttribute('data-theme', 'dark');
+                if (icon) {
+                    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+                }
+            }
+        }
+
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            applyTheme(savedTheme);
+        }
+
         const form = document.getElementById('login-form');
         const message = document.getElementById('login-message');
 
@@ -93,6 +268,13 @@
                 submitButton.textContent = 'Sign In';
             }
         });
+
+        // Initialize theme when DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeTheme);
+        // Also call it immediately in case DOM is already ready
+        if (document.readyState !== 'loading') {
+            initializeTheme();
+        }
     </script>
 
 </body>
