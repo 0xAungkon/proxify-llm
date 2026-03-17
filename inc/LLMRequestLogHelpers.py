@@ -116,7 +116,7 @@ def append_full_response_body(log_file: str, response_body: Any) -> None:
 def finalize_log_file(log_file: str, response_code: int, latency: float) -> str:
 	"""Write the completed log as a JSON file and rename it with the response code.
 
-	Filename format: ``<METHOD>_<TIMESTAMP>_<RESPONSE_CODE>_<3DIGIT>.json``
+	Filename format: ``<method>_<timestamp>_<http_code>_<pathbase_name>_<random_suffix>.json``
 
 	Returns the final file path.
 	"""
@@ -126,8 +126,13 @@ def finalize_log_file(log_file: str, response_code: int, latency: float) -> str:
 	timestamp = state.get("_timestamp", time.strftime("%Y%m%d_%H%M%S"))
 	random_suffix = state.get("_random_suffix", random.randint(100, 999))
 	log_dir = state.get("_log_dir", os.path.dirname(log_file))
+	path = state.get("path", "/")
 	response_chunks: bytearray = state.pop("_response_chunks", bytearray())
 	response_body_complete: Any = state.pop("_response_body_complete", None)
+
+	# Extract the base name from the path (last non-empty segment)
+	path_parts = [p for p in path.strip("/").split("/") if p]
+	path_base_name = path_parts[-1] if path_parts else "root"
 
 	# Discard internal tracking keys before persisting.
 	for internal_key in ("_timestamp", "_random_suffix", "_log_dir"):
@@ -150,7 +155,7 @@ def finalize_log_file(log_file: str, response_code: int, latency: float) -> str:
 	}
 
 	final_path = os.path.join(
-		log_dir, f"{method_upper}_{timestamp}_{response_code}_{random_suffix}.json"
+		log_dir, f"{method_upper}_{timestamp}_{response_code}_{path_base_name}_{random_suffix}.json"
 	)
 
 	with open(final_path, "w", encoding="utf-8") as file:

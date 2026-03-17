@@ -17,7 +17,12 @@ function getSource() {
 }
 
 function apiPathFromLog(log) {
-  return '/' + (log.relative_path.split('/').slice(0, -1).join('/') || log.relative_path);
+    if(log.relative_path.split('/').length <= 1) {
+        if(log.relative_path.split('_')[4]=="root") {
+            return '/';
+        }
+    }
+    return '/' + (log.relative_path.split('/').slice(0, -1).join('/') || log.relative_path);
 }
 
 function createLogRow(log, apiPath, extraClasses = '') {
