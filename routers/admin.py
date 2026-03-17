@@ -39,7 +39,7 @@ def _list_log_files(log_root: Path, response_root: Path | None = None) -> list[d
 		return []
 
 	serialization_root = response_root or log_root
-	log_files = [path for path in log_root.rglob("*.log") if path.is_file()]
+	log_files = [path for path in log_root.rglob("*.json") if path.is_file()]
 	log_files.sort(key=lambda path: path.stat().st_mtime, reverse=True)
 	return [_serialize_log_file(log_file=log_file, log_root=serialization_root) for log_file in log_files]
 
@@ -158,6 +158,30 @@ async def get_admin_logs(_: dict[str, str | float] = Depends(require_admin_sessi
 	return {
 		"status": "success",
 		"logs": _list_log_files(log_root=log_root),
+	}
+
+
+@router.delete("/admin/logs/clear")
+async def clear_admin_logs(_: dict[str, str | float] = Depends(require_admin_session)):
+	log_root = _get_log_root()
+	if not log_root.exists() or not log_root.is_dir():
+		return {"status": "success", "deleted": 0}
+
+	deleted = 0
+	errors: list[str] = []
+	for log_file in log_root.rglob("*.json"):
+		if not log_file.is_file():
+			continue
+		try:
+			log_file.unlink()
+			deleted += 1
+		except OSError as exc:
+			errors.append(f"{log_file.name}: {exc.strerror}")
+
+	return {
+		"status": "success" if not errors else "partial",
+		"deleted": deleted,
+		**({"errors": errors} if errors else {}),
 	}
 
 

@@ -145,9 +145,6 @@ secrets.*
 *.key
 *.pem
 
-# Docker
-docker-compose.override.yml
-
 # backups
 *.bak
 *.swp

@@ -9,9 +9,9 @@ from config.settings import settings
 from inc.LogHelpers import  logger
 from inc.LLMRequestLogHelpers import (
     append_assistant_response,
-    append_response_end,
     build_log_dir,
     create_log_file,
+    finalize_log_file,
     schedule_log_retention_cleanup,
     write_response_chunk,
 )
@@ -62,7 +62,11 @@ async def handle_proxy_request(path: str, request: Request) -> StreamingResponse
                     append_assistant_response(log_file=log_file, assistant_response=clear_response)
 
                 latency = round(time.time() - start, 3)
-                append_response_end(log_file=log_file, latency=latency)
+                finalize_log_file(
+                    log_file=log_file,
+                    response_code=response.status_code,
+                    latency=latency,
+                )
                 logger.info(f"[{request_id}] Completed request in {latency:.3f}s")
 
     return StreamingResponse(stream_generator(), media_type="application/json")

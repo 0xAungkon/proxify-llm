@@ -1,10 +1,15 @@
-import os
 import asyncio
+import json
+import os
+import random
 import time
 from typing import Any
 
 
 _RETENTION_TASKS: dict[str, asyncio.Task[None]] = {}
+
+# In-memory state for pending log entries keyed by the pending file path.
+_LOG_STATE: dict[str, dict[str, Any]] = {}
 
 
 def _enforce_log_retention(log_dir: str, retention_days: int) -> None:
@@ -13,7 +18,7 @@ def _enforce_log_retention(log_dir: str, retention_days: int) -> None:
 
 	cutoff = time.time() - (retention_days * 24 * 60 * 60)
 	for file_name in os.listdir(log_dir):
-		if not file_name.endswith(".log"):
+		if not file_name.endswith(".json"):
 			continue
 
 		file_path = os.path.join(log_dir, file_name)
@@ -55,31 +60,88 @@ def create_log_file(
 	method: str,
 	request_data: Any,
 ) -> str:
+	"""Register an in-progress log entry and return the pending file path.
+
+	The file is not written to disk until :func:`finalize_log_file` is called,
+	at which point the response code is known and the filename can be finalised.
+	"""
 	log_dir = build_log_dir(log_folder=log_folder, path=path)
 	os.makedirs(log_dir, exist_ok=True)
-	log_file = os.path.join(log_dir, f"{time.strftime('%Y%m%d_%H%M%S')}_{request_id}.log")
 
-	with open(log_file, "wb") as file:
-		file.write(f"Request ID: {request_id}\n".encode())
-		file.write(f"Path: /{path}\n".encode())
-		file.write(f"Method: {method}\n".encode())
-		file.write(f"Request: {request_data}\n".encode())
-		file.write(b"--- RESPONSE START ---\n")
+	timestamp = time.strftime("%Y%m%d_%H%M%S")
+	random_suffix = random.randint(100, 999)
+	method_upper = method.upper()
 
-	return log_file
+	# Reserve the slot with a PENDING filename so the path is known up-front.
+	pending_path = os.path.join(
+		log_dir, f"{method_upper}_{timestamp}_PENDING_{random_suffix}.json"
+	)
+
+	_LOG_STATE[pending_path] = {
+		"request_id": request_id,
+		"path": f"/{path}",
+		"method": method_upper,
+		"_timestamp": timestamp,
+		"_random_suffix": random_suffix,
+		"_log_dir": log_dir,
+		"request": request_data,
+		"_response_chunks": bytearray(),
+		"assistant_response": None,
+	}
+
+	return pending_path
 
 
 def write_response_chunk(log_file: str, chunk: bytes) -> None:
-	with open(log_file, "ab") as file:
-		file.write(chunk)
+	"""Accumulate a response chunk in memory."""
+	state = _LOG_STATE.get(log_file)
+	if state is not None:
+		state["_response_chunks"].extend(chunk)
 
 
 def append_assistant_response(log_file: str, assistant_response: str) -> None:
-	with open(log_file, "ab") as file:
-		file.write(f"Assistant response: {assistant_response}\n".encode())
+	"""Store the parsed assistant reply in the pending log state."""
+	state = _LOG_STATE.get(log_file)
+	if state is not None:
+		state["assistant_response"] = assistant_response
 
 
-def append_response_end(log_file: str, latency: float) -> None:
-	with open(log_file, "ab") as file:
-		file.write(b"\n--- RESPONSE END ---\n")
-		file.write(f"Latency: {latency:.3f} sec\n".encode())
+def finalize_log_file(log_file: str, response_code: int, latency: float) -> str:
+	"""Write the completed log as a JSON file and rename it with the response code.
+
+	Filename format: ``<METHOD>_<TIMESTAMP>_<RESPONSE_CODE>_<3DIGIT>.json``
+
+	Returns the final file path.
+	"""
+	state = _LOG_STATE.pop(log_file, {})
+
+	method_upper = state.get("method", "UNKNOWN")
+	timestamp = state.get("_timestamp", time.strftime("%Y%m%d_%H%M%S"))
+	random_suffix = state.get("_random_suffix", random.randint(100, 999))
+	log_dir = state.get("_log_dir", os.path.dirname(log_file))
+	response_chunks: bytearray = state.pop("_response_chunks", bytearray())
+
+	# Discard internal tracking keys before persisting.
+	for internal_key in ("_timestamp", "_random_suffix", "_log_dir"):
+		state.pop(internal_key, None)
+
+	try:
+		response_body: Any = json.loads(response_chunks.decode("utf-8", errors="replace"))
+	except (json.JSONDecodeError, ValueError):
+		response_body = response_chunks.decode("utf-8", errors="replace") or None
+
+	log_data = {
+		**state,
+		"response_code": response_code,
+		"response_body": response_body,
+		"latency_sec": latency,
+	}
+
+	final_path = os.path.join(
+		log_dir, f"{method_upper}_{timestamp}_{response_code}_{random_suffix}.json"
+	)
+
+	with open(final_path, "w", encoding="utf-8") as file:
+		json.dump(log_data, file, indent=2, default=str)
+
+	return final_path
