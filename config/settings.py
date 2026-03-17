@@ -10,6 +10,18 @@ class Settings(BaseSettings):
     proxy_host: str = Field(default="0.0.0.0", alias="PROXY_HOST")
     proxy_port: int = Field(default=8000, alias="PROXY_PORT", ge=1, le=65535)
     log_folder: str = Field(default="logs/ollama", alias="LOG_FOLDER")
+    admin_username: str = Field(default="", alias="ADMIN_USERNAME")
+    admin_password: str = Field(default="", alias="ADMIN_PASSWORD")
+    admin_session_cookie_name: str = Field(
+        default="proxify_admin_session",
+        alias="ADMIN_SESSION_COOKIE_NAME",
+    )
+    admin_session_max_age_hours: int = Field(
+        default=12,
+        alias="ADMIN_SESSION_MAX_AGE_HOURS",
+        ge=1,
+        le=168,
+    )
 
     secret_key: str = Field(
         default="",
