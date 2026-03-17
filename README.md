@@ -13,7 +13,7 @@ Phase 3: Implementation of Database Logging
 - Implement a database (e.g., SQLite/Json) to store logs of requests and responses for long-term analysis and querying.
 - Implement a mechanism to query logs from the database through the dashboard.
 
-Phase 4: Implementation of Authentication & SSL
+Phase 4: Implementation of Authentication & Self-Signed SSL
 - Implement an authentication mechanism to restrict access to the proxy server.
 - Support for multiple authentication methods (e.g., API keys).
 - Logging of authentication attempts and outcomes.
