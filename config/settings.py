@@ -10,6 +10,14 @@ class Settings(BaseSettings):
     proxy_host: str = Field(default="0.0.0.0", alias="PROXY_HOST")
     proxy_port: int = Field(default=8000, alias="PROXY_PORT", ge=1, le=65535)
     log_folder: str = Field(default="logs/ollama", alias="LOG_FOLDER")
+
+    secret_key: str = Field(
+        default="",
+        alias="SECRET_KEY",
+        min_length=8,
+        max_length=64,
+    )
+
     log_retention_days: int = Field(
         default=7,
         validation_alias=AliasChoices("LOG_RETAIN_DAYS", "LOG_RETENTION_DAYS"),
