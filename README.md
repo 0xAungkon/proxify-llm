@@ -154,7 +154,7 @@ OLLAMA_PORT=11434               # Ollama server port
 
 ## License
 
-[Add your license here]
+This project is licensed under the MIT License.
 
 ## Support
 
