@@ -106,6 +106,13 @@ def append_assistant_response(log_file: str, assistant_response: str) -> None:
 		state["assistant_response"] = assistant_response
 
 
+def append_full_response_body(log_file: str, response_body: Any) -> None:
+	"""Store the complete response body (including metadata) in the pending log state."""
+	state = _LOG_STATE.get(log_file)
+	if state is not None:
+		state["_response_body_complete"] = response_body
+
+
 def finalize_log_file(log_file: str, response_code: int, latency: float) -> str:
 	"""Write the completed log as a JSON file and rename it with the response code.
 
@@ -120,15 +127,20 @@ def finalize_log_file(log_file: str, response_code: int, latency: float) -> str:
 	random_suffix = state.get("_random_suffix", random.randint(100, 999))
 	log_dir = state.get("_log_dir", os.path.dirname(log_file))
 	response_chunks: bytearray = state.pop("_response_chunks", bytearray())
+	response_body_complete: Any = state.pop("_response_body_complete", None)
 
 	# Discard internal tracking keys before persisting.
 	for internal_key in ("_timestamp", "_random_suffix", "_log_dir"):
 		state.pop(internal_key, None)
 
-	try:
-		response_body: Any = json.loads(response_chunks.decode("utf-8", errors="replace"))
-	except (json.JSONDecodeError, ValueError):
-		response_body = response_chunks.decode("utf-8", errors="replace") or None
+	# Use the complete response body if available, otherwise parse from chunks
+	if response_body_complete is not None:
+		response_body = response_body_complete
+	else:
+		try:
+			response_body: Any = json.loads(response_chunks.decode("utf-8", errors="replace"))
+		except (json.JSONDecodeError, ValueError):
+			response_body = response_chunks.decode("utf-8", errors="replace") or None
 
 	log_data = {
 		**state,

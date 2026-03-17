@@ -16,6 +16,28 @@ function jsonPre(data) {
   return `<pre class="whitespace-pre-wrap break-words text-[#a6accd] font-mono text-[12px]">${escapeHtml(s)}</pre>`;
 }
 
+function isResponseMetadata(responseBody) {
+  if (typeof responseBody !== 'object' || responseBody === null) return false;
+  // Check if it has metadata fields from Ollama chat completion
+  return 'done' in responseBody || 'done_reason' in responseBody || 'total_duration' in responseBody;
+}
+
+function buildResponseMetadataTable(responseBody) {
+  if (!responseBody || typeof responseBody !== 'object') return '';
+  if (!isResponseMetadata(responseBody)) return '';
+  
+  const metadataFields = ['done', 'done_reason', 'total_duration', 'load_duration', 'prompt_eval_count', 'prompt_eval_duration', 'eval_count', 'eval_duration'];
+  const rows = metadataFields
+    .filter(field => field in responseBody)
+    .map(field => kvRow(field, responseBody[field]))
+    .join('');
+  
+  if (!rows) return '';
+  
+  return `<div class="text-[#888] text-[10px] uppercase tracking-wide mb-1 font-semibold">Response Metadata</div>
+    <table class="w-full mb-5"><tbody>${rows}</tbody></table>`;
+}
+
 export function switchTab(tab) {
   state.activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -77,7 +99,8 @@ export function renderDetails(logMeta) {
           ${kvRow('Latency', data?.latency_sec != null ? data.latency_sec + ' s' : null)}
       </tbody></table>
       ${data?.assistant_response != null ? `<div class="text-[#888] text-[10px] uppercase tracking-wide mb-1 font-semibold">Assistant Response</div><pre class="whitespace-pre-wrap break-words text-[#a6accd] font-mono text-[12px] mb-5">${escapeHtml(data.assistant_response)}</pre>` : ''}
-      ${data?.response_body != null ? `<div class="text-[#888] text-[10px] uppercase tracking-wide mb-1 font-semibold">Response Body</div>${jsonPre(data.response_body)}` : '<span class="text-[#777]">No response body captured.</span>'}
+      ${buildResponseMetadataTable(data?.response_body)}
+      ${data?.response_body != null && !isResponseMetadata(data.response_body) ? `<div class="text-[#888] text-[10px] uppercase tracking-wide mb-1 font-semibold">Response Body</div>${jsonPre(data.response_body)}` : ''}
   </div>`;
 }
 

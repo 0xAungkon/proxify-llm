@@ -9,6 +9,7 @@ from config.settings import settings
 from inc.LogHelpers import  logger
 from inc.LLMRequestLogHelpers import (
     append_assistant_response,
+    append_full_response_body,
     build_log_dir,
     create_log_file,
     finalize_log_file,
@@ -62,8 +63,10 @@ async def handle_proxy_request(path: str, request: Request) -> StreamingResponse
                     yield chunk
 
                 if chat_path:
-                    clear_response = extract_chat_response(response_bytes=response_bytes)
-                    append_assistant_response(log_file=log_file, assistant_response=clear_response)
+                    assistant_response, final_response_meta = extract_chat_response(response_bytes=response_bytes)
+                    append_assistant_response(log_file=log_file, assistant_response=assistant_response)
+                    # Store the complete response metadata (with done, durations, etc.)
+                    append_full_response_body(log_file=log_file, response_body=final_response_meta)
 
                 latency = round(time.time() - start, 3)
                 finalize_log_file(
