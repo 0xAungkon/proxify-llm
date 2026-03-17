@@ -151,3 +151,8 @@ docker-compose.override.yml
 # backups
 *.bak
 *.swp
+
+*.pyc
+__pycache__/*.pyc
+__pycache__
+*__pycache__*

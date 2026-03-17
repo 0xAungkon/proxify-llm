@@ -1,5 +1,7 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import json
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -15,5 +17,16 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    def llm_configs(self) -> dict:
+        
+        config_path = "config/llm_configs.json"
+        if not config_path.exists():
+            return {}
+
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
 
 settings = Settings()
