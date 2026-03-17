@@ -311,3 +311,10 @@ async def admin_login_page(request: Request):
 	if _has_valid_admin_session(request):
 		return RedirectResponse(url="/app", status_code=status.HTTP_302_FOUND)
 	return FileResponse(TEMPLATE_DIR / "login.html")
+
+
+@router.get("/app/logout")
+async def admin_logout(request: Request):
+	response = RedirectResponse(url="/app/login", status_code=status.HTTP_302_FOUND)
+	response.delete_cookie(key=settings.admin_session_cookie_name, path="/")
+	return response

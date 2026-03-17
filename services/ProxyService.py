@@ -21,7 +21,7 @@ from inc.ProxyHelpers import build_upstream_url, extract_chat_response, is_chat_
 
 async def handle_proxy_request(path: str, request: Request) -> StreamingResponse:
     normalized_path = path.lstrip("/")
-    if normalized_path == "favicon.ico" or normalized_path == ".well-known" or normalized_path.startswith(".well-known/"):
+    if normalized_path == "favicon.ico" or normalized_path == ".well-known" or normalized_path.startswith(".well-known/") or normalized_path.startswith("/common"):
         return JSONResponse(content={})
 
     request_id = str(uuid.uuid4())
