@@ -50,44 +50,27 @@ Proxify LLM is more than just a proxy server—it's a multi-layered security and
    ```
    http://localhost:11435
    ```
-
-### Command-Line Options
-
-```bash
-# Basic startup
-python main.py
-
-# With SSL (self-signed certificate)
-python main.py --ssl
-
-# Custom host and port
-python main.py --host 0.0.0.0 --port 8443
-
-# With authentication
-python main.py --auth username:password
-
-# Combine options
-python main.py --ssl --host 0.0.0.0 --port 8443 --auth admin:securepassword
-```
+5. **Login to Dashboard**
+   Use the credentials from your `.env` file (default: `admin/adminpassword`)
 
 ## Dashboard
 
 Proxify LLM provides a comprehensive web-based dashboard for monitoring all LLM traffic:
 
-### Overview Tab
-![Dashboard Overview](docs/screenshot-overview.png)
-View high-level statistics including response times, success rates, and system performance metrics.
+### Overview Tab 
+![Dashboard Overview](docs/screenshot-response.png) 
+Get a high-level overview of all requests traffic patterns in real-time.
 
 ### Request Details
-![Request Details](docs/screenshot-request.png)
-Inspect individual requests with full request metadata, headers, body content, and response information.
-
-### Request Log
-![Request Log](docs/screenshot-log.png)
+![Request Details](docs/screenshot-overview.png)
 Browse history of all API calls with filtering and search capabilities to find specific requests.
 
+### Request Log
+![Request Log](docs/screenshot-request.png)
+Inspect individual requests with full request metadata, headers, body content, and response information.
+
 ### Response Analysis
-![Response Analysis](docs/screenshot-response.png)
+![Response Analysis](docs/screenshot-log.png)
 View detailed response data including model outputs, processing time, and evaluation metrics.
 
 ## Use Cases
