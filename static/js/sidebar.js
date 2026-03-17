@@ -71,13 +71,12 @@ function renderTreeNode(container, node, depth = 0) {
 
   childNodes.forEach(child => {
     const hasChildren = child.children.size > 0 || child.logs.length > 0;
-    const expanded = expandedFolders.has(child.key) || depth === 0;
-    if (depth === 0 && !expandedFolders.has(child.key)) expandedFolders.add(child.key);
+    const expanded = expandedFolders.has(child.key);
 
     const folderRow = document.createElement('div');
     folderRow.className = 'flex items-center gap-1 px-2 py-[4px] border-b border-[#2c2c2c] text-[12px] cursor-pointer hover:bg-[#2a2a2a] text-[#b9c1cc]';
     folderRow.style.paddingLeft = `${8 + depth * 14}px`;
-    folderRow.innerHTML = `<span class="text-[10px] w-3 inline-block">${hasChildren ? (expanded ? '▼' : '+') : '•'}</span><span class="truncate">${escapeHtml(child.name)}</span>`;
+    folderRow.innerHTML = `<i data-lucide="${hasChildren ? (expanded ? 'chevron-down' : 'chevron-right') : 'dot'}" class="w-3 h-3 text-[#b9c1cc] inline-block flex-shrink-0"></i><span class="truncate">${escapeHtml(child.name)}</span>`;
     folderRow.onclick = () => {
       if (!hasChildren) return;
       if (expandedFolders.has(child.key)) expandedFolders.delete(child.key);
@@ -110,6 +109,7 @@ function updateViewToggleButton() {
 
 export function toggleSidebarView() {
   state.sidebarView = state.sidebarView === 'list' ? 'tree' : 'list';
+  localStorage.setItem('proxify_sidebar_view', state.sidebarView);
   updateViewToggleButton();
   renderList();
 }
@@ -131,10 +131,14 @@ export function renderList() {
   if (state.sidebarView === 'tree') {
     const tree = buildPathTree(source);
     renderTreeNode(container, tree, 0);
-    return;
+  } else {
+    source.forEach(log => {
+      container.appendChild(createLogRow(log, apiPathFromLog(log)));
+    });
   }
 
-  source.forEach(log => {
-    container.appendChild(createLogRow(log, apiPathFromLog(log)));
-  });
+  // Initialize any Lucide icons added to the DOM
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }

@@ -96,9 +96,17 @@ function bindGlobals() {
   window.actionReplay = actionReplay;
 }
 
+function restoreSidebarViewFromStorage() {
+  const saved = localStorage.getItem('proxify_sidebar_view');
+  if (saved && (saved === 'list' || saved === 'tree')) {
+    state.sidebarView = saved;
+  }
+}
+
 function init() {
   bindGlobals();
 
+  restoreSidebarViewFromStorage();
   initFilters({ renderList });
   initSidebar({
     onSelectLog: async relativePath => {
