@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Page</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script>
         // Initialize theme immediately to prevent flash
         (function () {
@@ -24,11 +25,7 @@
             <h2 class="text-2xl font-semibold text-[#eee] flex-1">Welcome Back</h2>
             <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme"
                 class="p-1 rounded text-[#888] hover:text-[#ffd700] hover:bg-[#333333] border border-[#3a3a3a] transition-colors">
-                <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <!-- Moon icon (shown in dark mode) -->
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
+                <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
             </button>
         </div>
         <p class="text-sm text-[#777] text-center mb-8">Please sign in to your account</p>
@@ -57,97 +54,7 @@
 
     </div>
 
-    <script>
-        function toggleTheme() {
-            const currentTheme = localStorage.getItem('theme') || 'dark';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            applyTheme(newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        function applyTheme(theme) {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-
-            if (theme === 'light') {
-                html.setAttribute('data-theme', 'light');
-                if (icon) {
-                    icon.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
-                }
-            } else {
-                html.setAttribute('data-theme', 'dark');
-                if (icon) {
-                    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
-                }
-            }
-        }
-
-        function initializeTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            applyTheme(savedTheme);
-        }
-
-        const form = document.getElementById('login-form');
-        const message = document.getElementById('login-message');
-
-        const renderMessage = (text, isError = false) => {
-            message.textContent = text;
-            message.classList.remove('hidden', 'border-[#2e7d32]', 'bg-[#1b2b1b]', 'text-[#a5d6a7]', 'border-[#8b2e2e]', 'bg-[#2b1b1b]', 'text-[#ffb4b4]');
-
-            if (isError) {
-                message.classList.add('border-[#8b2e2e]', 'bg-[#2b1b1b]', 'text-[#ffb4b4]');
-                return;
-            }
-
-            message.classList.add('border-[#2e7d32]', 'bg-[#1b2b1b]', 'text-[#a5d6a7]');
-        };
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const submitButton = form.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Signing In...';
-
-            const payload = {
-                username: document.getElementById('username').value.trim(),
-                password: document.getElementById('password').value,
-            };
-
-            try {
-                const response = await fetch('/common/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(payload),
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    renderMessage(data.detail || 'Login failed.', true);
-                    return;
-                }
-
-                renderMessage(data.message || 'Login successful. Redirecting...');
-                window.location.href = '/app';
-            } catch (error) {
-                renderMessage('Unable to complete login request.', true);
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Sign In';
-            }
-        });
-
-        // Initialize theme when DOM is ready
-        document.addEventListener('DOMContentLoaded', initializeTheme);
-        // Also call it immediately in case DOM is already ready
-        if (document.readyState !== 'loading') {
-            initializeTheme();
-        }
-    </script>
+    <script type="module" src="/static/js/login.js"></script>
 
 </body>
 

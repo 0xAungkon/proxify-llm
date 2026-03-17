@@ -6,6 +6,8 @@ import { applyFilters, clearFilters, clearSearch, closeFilterMenus, hasActiveFil
 import { actionCurl, actionDelete, actionReplay, clearAllLogs, copyLogJson, initActions, openReplayForPath } from './actions.js';
 import { initContextMenu, showCtxMenu } from './contextMenu.js';
 import { initSidebarResize } from './resize.js';
+import { toggleTheme, initTheme } from './theme.js';
+import { handleLogout } from './auth.js';
 
 const AUTO_REFRESH_SECONDS = 10;
 let refreshCountdown = AUTO_REFRESH_SECONDS;
@@ -94,6 +96,8 @@ function bindGlobals() {
   window.actionCurl = actionCurl;
   window.actionDelete = actionDelete;
   window.actionReplay = actionReplay;
+  window.toggleTheme = toggleTheme;
+  window.handleLogout = handleLogout;
 }
 
 function restoreSidebarViewFromStorage() {
@@ -106,6 +110,7 @@ function restoreSidebarViewFromStorage() {
 function init() {
   bindGlobals();
 
+  initTheme();
   restoreSidebarViewFromStorage();
   initFilters({ renderList });
   initSidebar({

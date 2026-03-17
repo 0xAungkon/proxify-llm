@@ -167,53 +167,6 @@
     </div>
 
     <script type="module" src="/static/js/app.js"></script>
-    <script>
-        function toggleTheme() {
-            const currentTheme = localStorage.getItem('theme') || 'dark';
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            applyTheme(newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        function applyTheme(theme) {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-
-            if (theme === 'light') {
-                html.setAttribute('data-theme', 'light');
-                html.classList.add('light-mode');
-                html.classList.remove('dark-mode');
-                icon.setAttribute('data-lucide', 'sun');
-            } else {
-                html.setAttribute('data-theme', 'dark');
-                html.classList.add('dark-mode');
-                html.classList.remove('light-mode');
-                icon.setAttribute('data-lucide', 'moon');
-            }
-
-            if (window.lucide) {
-                window.lucide.createIcons();
-            }
-        }
-
-        function initializeTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            applyTheme(savedTheme);
-        }
-
-        async function handleLogout() {
-
-            window.location.href = '/app/logout';
-        }
-
-        // Initialize theme when DOM is ready
-        document.addEventListener('DOMContentLoaded', initializeTheme);
-        // Also call it immediately in case DOM is already ready
-        if (document.readyState !== 'loading') {
-            initializeTheme();
-        }
-    </script>
-
     <!-- Right-click context menu -->
     <div id="ctx-menu"
         class="hidden fixed z-50 bg-[#252526] border border-[#454545] rounded-md shadow-2xl py-1 text-[12px]"
