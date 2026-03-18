@@ -26,7 +26,7 @@ Proxify LLM is more than just a proxy server—it's a multi-layered security and
 - **Authentication**: Built-in support for basic authentication with `--auth` flag
 - **SSL/TLS Support**: Generate and manage self-signed certificates with `--ssl` flag
 - **Flexible Configuration**: Command-line arguments for host, port, authentication, and SSL configuration
-- **Tunneling Capabilities**: Support for Cloudflare and ngrok for secure external access
+- **Tunneling Capabilities**: Built-in support for Pinggy SSH tunneling for secure external access
 - **Multi-Provider Support**: Extensible architecture for supporting multiple LLM providers (OpenAI, Anthropic, etc.)
 - **Advanced Routing**: Route requests based on conditions, headers, and custom rules
 
@@ -54,10 +54,31 @@ Proxify LLM is more than just a proxy server—it's a multi-layered security and
 4. **Configure Your LLM Clients**
    Replace your Ollama endpoint with:
    ```
-   http://localhost:11435
+   http://localhost:8000
    ```
 5. **Login to Dashboard**
-   Use the credentials from your `.env` file (default: `admin/adminpassword`)
+   Use the credentials from your `.env` file
+
+### Enable Pinggy Tunnel (Optional)
+
+Tunnel your local Proxify service to the internet using Pinggy:
+
+**Basic tunnel with default credentials:**
+```bash
+make run-tunnel-pinggy
+```
+
+**Tunnel with custom Pinggy token:**
+```bash
+make run-tunnel-pinggy-custom TUNNEL_TOKEN=HyhsrQGeh96@free.pinggy.io
+```
+
+Or run directly:
+```bash
+uv run main.py --tunnel pinggy --tunnel-token YOUR_TOKEN@free.pinggy.io
+```
+
+The public tunnel URL will be displayed in the terminal (e.g., `https://yuadz-103-161-106-111.a.free.pinggy.link`)
 
 ## Dashboard
 
@@ -109,6 +130,7 @@ Inspect full request/response cycle during development to debug integration issu
 - [ ] Phase 3: Tunneling & External Access
   - Cloudflare tunnels support
   - ngrok integration
+  - pinggy integration
   
 - [ ] Phase 4: Multi-Provider Support
   - OpenAI API support

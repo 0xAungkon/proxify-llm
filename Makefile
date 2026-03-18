@@ -15,7 +15,15 @@ dev:
 
 run:
 	uv sync
-	uv run main.py --port 11435
+	uv run main.py
+
+run-tunnel-pinggy:
+	uv sync
+	uv run main.py --tunnel pinggy
+
+run-tunnel-pinggy-custom:
+	uv sync
+	uv run main.py --tunnel pinggy --tunnel-token $(TUNNEL_TOKEN)
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
