@@ -127,9 +127,7 @@ Inspect full request/response cycle during development to debug integration issu
   - Real-time log monitoring dashboard
   - Request/response inspection
   
-- [ ] Phase 3: Tunneling & External Access
-  - Cloudflare tunnels support
-  - ngrok integration
+- [x] Phase 3: Tunneling & External Access
   - pinggy integration
   
 - [ ] Phase 4: Multi-Provider Support
